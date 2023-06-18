@@ -22,9 +22,8 @@ namespace BooksCatalog.Controllers
         // GET: Books
         public async Task<IActionResult> Index()
         {
-              return _context.BookModels != null ? 
-                          View(await _context.BookModels.ToListAsync()) :
-                          Problem("Entity set 'ApplicationDbContext.BookModels'  is null.");
+            var books = await _context.BookModels.Include(b => b.Author).ToListAsync();
+            return View(books);
         }
 
         // GET: Books/Details/5
@@ -48,6 +47,8 @@ namespace BooksCatalog.Controllers
         // GET: Books/Create
         public IActionResult Create()
         {
+            var authors = _context.AuthorModels.ToList();
+            ViewBag.Authors = authors;
             return View();
         }
 
@@ -56,14 +57,27 @@ namespace BooksCatalog.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Genre")] BookModel bookModel)
+        public async Task<IActionResult> Create([Bind("Id,Title,Genre,Author")] BookModel bookModel)
         {
             if (ModelState.IsValid)
             {
+                // Получить выбранного автора по его идентификатору
+                var selectedAuthor = _context.AuthorModels.FirstOrDefault(a => a.Id == bookModel.Author.Id);
+
+                if (selectedAuthor != null)
+                {
+                    // Привязать автора к книге
+                    bookModel.Author = selectedAuthor;
+                }
+
                 _context.Add(bookModel);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
+            // Если модель недействительна, повторно отобразить форму с ошибками
+            var authors = _context.AuthorModels.ToList();
+            ViewBag.Authors = authors;
             return View(bookModel);
         }
 

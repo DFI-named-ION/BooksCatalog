@@ -22,9 +22,8 @@ namespace BooksCatalog.Controllers
         // GET: Authors
         public async Task<IActionResult> Index()
         {
-              return _context.AuthorModels != null ? 
-                          View(await _context.AuthorModels.ToListAsync()) :
-                          Problem("Entity set 'ApplicationDbContext.AuthorModels'  is null.");
+            var authors = await _context.AuthorModels.Include(a => a.Books).ToListAsync();
+            return View(authors);
         }
 
         // GET: Authors/Details/5
